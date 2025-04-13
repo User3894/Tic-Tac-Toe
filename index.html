@@ -1,369 +1,78 @@
-/* --- إعدادات عامة ومتغيرات --- */
-:root {
-    --bg-gradient: linear-gradient(135deg, #1f2937, #111827); /* خلفية متدرجة داكنة */
-    --board-bg: rgba(255, 255, 255, 0.05);
-    --cell-bg: rgba(255, 255, 255, 0.1);
-    --cell-hover-bg: rgba(255, 255, 255, 0.2);
-    --text-light: #e5e7eb;
-    --text-medium: #9ca3af;
-    --primary-glow: #0ea5e9; /* Sky blue */
-    --secondary-glow: #ec4899; /* Pink */
-    --accent-color: #f59e0b; /* Amber */
-    --win-line-color: var(--accent-color);
-    --font-primary: 'Cairo', sans-serif;
-    --font-display: 'Orbitron', sans-serif; /* خط للشعارات والأرقام */
-    --border-radius: 10px;
-    --cell-size: clamp(80px, 18vmin, 120px); /* حجم خلية متجاوب */
-    --board-gap: 10px;
-}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة X-O المتطورة</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999;"></canvas>
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+    <div class="game-container">
 
-body {
-    font-family: var(--font-primary);
-    background: var(--bg-gradient);
-    color: var(--text-light);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 1rem;
-    overflow: hidden; /* منع ظهور أشرطة التمرير بسبب التأثيرات */
-    direction: rtl;
-}
+        <!-- شاشة إعداد اللاعبين -->
+        <div id="player-setup" class="player-setup active">
+            <h1>لعبة X-O المذهلة!</h1>
+            <p>أدخل أسماء اللاعبين لبدء التحدي</p>
+            <div class="input-group">
+                <label for="playerX">اسم اللاعب X:</label>
+                <input type="text" id="playerX" placeholder="اللاعب الأول" value="لاعب X">
+            </div>
+            <div class="input-group">
+                <label for="playerO">اسم اللاعب O:</label>
+                <input type="text" id="playerO" placeholder="اللاعب الثاني" value="لاعب O">
+            </div>
+            <button id="start-game-btn" class="btn start-btn">🚀 ابدأ اللعب!</button>
+        </div>
 
-.game-container {
-    width: 100%;
-    max-width: 600px; /* أقصى عرض للحاوية */
-    background: rgba(0, 0, 0, 0.3); /* خلفية شبه شفافة */
-    backdrop-filter: blur(10px); /* تأثير بلور للخلفية */
-    border-radius: var(--border-radius);
-    padding: 2rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 40px rgba(var(--primary-glow-rgb, 14, 165, 233), 0.2); /* ظل مع توهج */
-    position: relative; /* للسماح بتمركز العناصر الداخلية */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
+        <!-- منطقة اللعب الرئيسية -->
+        <div id="game-area" class="game-area">
+            <div class="scoreboard">
+                <div id="scoreX" class="score player-x">
+                    <span class="player-name">لاعب X</span>: <span class="score-value">0</span>
+                </div>
+                <div id="turn-indicator" class="turn-indicator">
+                    <span id="current-player-name"></span> حان دورك! <span id="current-player-symbol" class="symbol"></span>
+                </div>
+                <div id="scoreO" class="score player-o">
+                     <span class="score-value">0</span> :<span class="player-name">لاعب O</span>
+                </div>
+            </div>
 
-/* --- شاشة إعداد اللاعبين --- */
-.player-setup {
-    text-align: center;
-    display: none; /* تبدأ مخفية */
-    flex-direction: column;
-    gap: 1.5rem;
-    animation: fadeIn 0.5s ease-out forwards;
-}
+            <div id="board" class="board">
+                <!-- سيتم إنشاء الخلايا بواسطة JavaScript -->
+                <div class="cell" data-index="0"></div>
+                <div class="cell" data-index="1"></div>
+                <div class="cell" data-index="2"></div>
+                <div class="cell" data-index="3"></div>
+                <div class="cell" data-index="4"></div>
+                <div class="cell" data-index="5"></div>
+                <div class="cell" data-index="6"></div>
+                <div class="cell" data-index="7"></div>
+                <div class="cell" data-index="8"></div>
+                 <!-- عنصر لرسم خط الفوز -->
+                 <div id="winning-line" class="winning-line"></div>
+            </div>
 
-.player-setup.active {
-    display: flex;
-}
+            <div id="status" class="status-message"></div>
 
-.player-setup h1 {
-    font-family: var(--font-display);
-    color: var(--accent-color);
-    font-size: 2rem;
-    text-shadow: 0 0 10px var(--accent-color);
-    margin-bottom: 0.5rem;
-}
+            <div class="controls">
+                <button id="restart-btn" class="btn restart-btn">🔄 إعادة اللعب</button>
+                <button id="new-game-btn" class="btn new-game-btn">🎮 لعبة جديدة (أسماء جديدة)</button>
+            </div>
+        </div>
 
-.player-setup p {
-    color: var(--text-medium);
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-}
+    </div>
 
-.input-group {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.input-group label {
-    font-weight: 700;
-    color: var(--text-light);
-}
-
-.input-group input[type="text"] {
-    background: var(--cell-bg);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 5px;
-    padding: 0.7rem 1rem;
-    color: var(--text-light);
-    font-family: var(--font-primary);
-    text-align: center;
-    width: 80%;
-    max-width: 300px;
-    transition: all 0.3s ease;
-}
-
-.input-group input[type="text"]:focus {
-    outline: none;
-    border-color: var(--primary-glow);
-    box-shadow: 0 0 15px rgba(var(--primary-glow-rgb, 14, 165, 233), 0.5);
-}
-
-/* --- منطقة اللعب الرئيسية --- */
-.game-area {
-    display: none; /* تبدأ مخفية */
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-    animation: fadeIn 0.5s 0.2s ease-out forwards; /* تأخير بسيط */
-    opacity: 0; /* تبدأ شفافة للأنيميشن */
-}
-
-.game-area.active {
-    display: flex;
-    opacity: 1;
-}
-
-/* --- لوحة النتائج ومؤشر الدور --- */
-.scoreboard {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 0.5rem 1rem;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 5px;
-    margin-bottom: 1rem;
-    font-family: var(--font-display);
-}
-
-.score {
-    font-size: 1.1rem;
-    font-weight: 700;
-    padding: 0.3rem 0.8rem;
-    border-radius: 5px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.score .player-name {
-     font-family: var(--font-primary); /* استخدام الخط العادي للاسم */
-     font-weight: normal; /* جعل اسم اللاعب بخط عادي */
-     margin: 0 5px; /* مسافة حول الاسم */
-}
-
-
-.score.player-x { color: var(--primary-glow); }
-.score.player-o { color: var(--secondary-glow); }
-
-.score.active-turn {
-    transform: scale(1.1);
-    box-shadow: 0 0 15px currentColor;
-}
-
-.turn-indicator {
-    font-size: 1rem;
-    text-align: center;
-    color: var(--text-medium);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.turn-indicator .symbol {
-    font-size: 1.5em; /* تكبير الرمز قليلاً */
-    font-weight: 900;
-    display: inline-block;
-    transform-origin: center center;
-}
-.turn-indicator .symbol.X { color: var(--primary-glow); animation: pulse 1.5s infinite ease-in-out; }
-.turn-indicator .symbol.O { color: var(--secondary-glow); animation: pulse 1.5s infinite ease-in-out; }
-
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-}
-
-
-/* --- لوحة اللعب والخلايا --- */
-.board {
-    display: grid;
-    grid-template-columns: repeat(3, var(--cell-size));
-    grid-template-rows: repeat(3, var(--cell-size));
-    gap: var(--board-gap);
-    background: var(--board-bg);
-    padding: var(--board-gap);
-    border-radius: var(--border-radius);
-    position: relative; /* للسماح بتمركز خط الفوز */
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.cell {
-    background: var(--cell-bg);
-    border-radius: 5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: calc(var(--cell-size) * 0.6); /* حجم الخط يعتمد على حجم الخلية */
-    font-weight: 900;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    position: relative;
-    overflow: hidden; /* لإخفاء أجزاء الأنيميشن الزائدة */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.cell:hover:not(.X):not(.O):not(.disabled) { /* لا تظهر الهوفر إذا كانت مملوءة أو معطلة */
-    background-color: var(--cell-hover-bg);
-    transform: scale(1.03);
-}
-
-.cell.disabled {
-    cursor: not-allowed;
-}
-
-/* --- تصميم رموز X و O مع تأثيرات --- */
-.cell .symbol {
-    display: inline-block;
-    transform: scale(0); /* تبدأ مخفية */
-    opacity: 0;
-    animation: placeSymbol 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; /* انيميشن ظهور مع ارتداد */
-}
-
-.cell.X .symbol { color: var(--primary-glow); text-shadow: 0 0 10px var(--primary-glow); }
-.cell.O .symbol { color: var(--secondary-glow); text-shadow: 0 0 10px var(--secondary-glow); }
-
-@keyframes placeSymbol {
-    0% { transform: scale(0) rotate(-90deg); opacity: 0; }
-    70% { transform: scale(1.1) rotate(10deg); opacity: 1; }
-    100% { transform: scale(1) rotate(0deg); opacity: 1; }
-}
-
-/* --- خط الفوز --- */
-.winning-line {
-    position: absolute;
-    background-color: var(--win-line-color);
-    height: 6px; /* سماكة الخط */
-    border-radius: 3px;
-    transform-origin: center center;
-    /* يتم تحديد العرض والموضع والدوران بواسطة JavaScript */
-    display: none; /* يبدأ مخفيًا */
-    box-shadow: 0 0 15px 2px var(--win-line-color);
-    animation: drawLine 0.5s ease-out forwards;
-    z-index: 10;
-}
-
-@keyframes drawLine {
-     from { transform: scaleX(0); }
-     to { transform: scaleX(1); }
-}
-
-/* --- رسالة الحالة --- */
-.status-message {
-    font-size: 1.3rem;
-    font-weight: 700;
-    min-height: 2em; /* حجز مساحة للرسالة */
-    text-align: center;
-    margin-top: 1rem;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.4s ease, transform 0.4s ease;
-}
-
-.status-message.show {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.status-message.win {
-    color: var(--accent-color);
-    text-shadow: 0 0 10px var(--accent-color);
-    animation: statusPulse 1s infinite;
-}
-
-.status-message.draw {
-    color: var(--text-medium);
-}
-
-@keyframes statusPulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.8; }
-}
-
-
-/* --- أزرار التحكم --- */
-.controls {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-}
-
-.btn {
-    padding: 0.8rem 1.5rem;
-    border: none;
-    border-radius: 5px;
-    font-family: var(--font-primary);
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-}
-
-.btn::before { /* تأثير خلفية متحركة عند المرور */
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.2);
-    transition: left 0.4s ease;
-    z-index: -1;
-}
-
-.btn:hover::before {
-    left: 0;
-}
-
-.btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-}
-
-.start-btn { background-color: var(--accent-color); color: #1f2937; }
-.start-btn:hover { background-color: #d97706; } /* Darker Amber */
-
-.restart-btn { background-color: var(--primary-glow); color: #111827; }
-.restart-btn:hover { background-color: #0284c7; } /* Darker Sky */
-
-.new-game-btn { background-color: var(--secondary-glow); color: #111827; }
-.new-game-btn:hover { background-color: #be185d; } /* Darker Pink */
-
-
-/* --- تأثيرات التلاشي --- */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* --- تصميم متجاوب --- */
-@media (max-width: 640px) {
-    :root {
-        --cell-size: clamp(70px, 22vmin, 100px);
-        --board-gap: 8px;
-    }
-    .game-container {
-        padding: 1.5rem;
-    }
-    .scoreboard {
-        flex-direction: column;
-        gap: 0.5rem;
-        padding: 0.8rem;
-    }
-    .score { font-size: 1rem; }
-    .turn-indicator { font-size: 0.9rem;}
-    h1 { font-size: 1.8rem; }
-    .controls { flex-direction: column; width: 80%;}
-    .btn { width: 100%; }
-}
+    <!-- مكتبة Confetti (اختياري لكنها تضيف تأثيرًا رائعًا) -->
+    <!-- قم بتنزيلها من: https://github.com/catdad/canvas-confetti -->
+    <!-- أو استخدم CDN -->
+     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script src="script.js"></script>
+</body>
+                                                     </html>
